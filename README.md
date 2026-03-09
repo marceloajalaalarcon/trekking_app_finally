@@ -1,27 +1,27 @@
 # Tracking Ecosystem 🧭
 
-O **Tracking Ecosystem** é um ecossistema completo para gestão, rastreamento e engajamento em eventos de Trekking (enduro a pé) e eventos esportivos padrão. O sistema é dividido em **4 projetos principais**: um Bankend unificado, um Dashboard Web para gestão, e dois aplicativos Mobile (um para os participantes e outro para a equipe organizadora/Staff).
+O **Trekking Ecosystem** é um ecossistema completo para gestão, rastreamento e engajamento em eventos de Trekking e os eventos  padrão. O sistema é dividido em **3 projetos principais**: um Bankend, um Dashboard Web para gestão, e dois aplicativos Mobile (um para os participantes e outro para a equipe organizadora/Staff).
 
 ---
 
 ## 🏗️ Estrutura dos Projetos
 
 ### 1. Backend (`/backend`)
-A base de todo o sistema. É uma API REST poderosa que centraliza as regras de negócio, cálculos de tempo, autenticação, etc.
+A base de todo o sistema. É uma API REST que centraliza as regras de negócio, cálculos de tempo, autenticação, etc.
 - **Tecnologia**: Node.js com [NestJS](https://nestjs.com/)
 - **Banco de Dados**: **PostgreSQL** (Gerenciado através do ORM [Prisma](https://www.prisma.io/)).
 - **Como rodar**:
   ```bash
   cd backend
   npm install
-  # Certifique-se de configurar a URL do banco PostgreSQL no arquivo .env
+  # Certifique-se de configurar a URL do banco PostgreSQL (ou utilizar supabase) no arquivo .env
   npx prisma generate
   npx prisma migrate dev
   npm run start:dev
   ```
 
 ### 2. Dashboard (`/dashboard`)
-Painel Administrativo Web utilizado pelos organizadores do evento para criar os trekkings, gerenciar equipes, aprovar pagamentos, emitir certificados e configurar as regras do evento (como Atividades Extras e Tempos Ideais).
+Painel Administrativo, painel de eventos do trekking e eventos normais Web utilizado pelos organizadores do evento para criar os trekkings, gerenciar equipes, aprovar pagamentos, emitir certificados e configurar as regras do evento (como Atividades Extras e Tempos Ideais).
 - **Tecnologia**: [Next.js](https://nextjs.org/) (React) + TailwindCSS
 - **Como rodar**:
   ```bash
