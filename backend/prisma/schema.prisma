@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SystemRole {
+  DEVELOPER
+  TREKKING_CREATOR
+  STANDARD_CREATOR
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password_hash String
+  role          SystemRole     @default(STANDARD_CREATOR)
+  created_at    DateTime       @default(now())
+  
+  refresh_tokens      RefreshToken[]
+  events              Event[]
+  team_memberships    TeamMember[]
+  event_participations EventParticipant[]
+  certificates        Certificate[]
+}
+
+model Event {
+  id                String    @id @default(uuid())
+  name              String
+  description       String?
+  location          String?
+  date              DateTime?
+  end_date          DateTime?
+  max_participants  Int?
+  is_active         Boolean   @default(false)
+  is_registration_open Boolean @default(false)
+  has_certificate   Boolean   @default(false)
+  is_group_event    Boolean   @default(false)
+  min_group_size    Int?
+  max_group_size    Int?
+  owner_id          String
+  owner             User      @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  participants      EventParticipant[]
+}
+
+model EventParticipant {
+  id         String   @id @default(uuid())
+  event_id   String
+  user_id    String
+  status     String   @default("REGISTERED") // REGISTERED, CONFIRMED, CANCELLED
+  created_at DateTime @default(now())
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_id, user_id])
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  expires_at DateTime
+  created_at DateTime @default(now())
+}
+
+model SystemSetting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
+
+model Trekking {
+  id                   String        @id @default(uuid())
+  name                 String
+  description          String?
+  location             String?
+  teams_start_interval Int           // Interval between team starts (seconds)
+  checkpoints_count    Int           // Number of checkpoints
+  is_registration_open Boolean       @default(false)
+  is_tracking          Boolean       @default(false)
+  has_extra_activities Boolean       @default(false)
+  created_at           DateTime      @default(now())
+  start_date           DateTime?
+  end_date             DateTime?
+  max_teams            Int?
+  min_team_size        Int?
+  max_team_size        Int?
+
+  roles                TrekkingRole[]
+  members              TrekkingMember[]
+  checkpoints          Checkpoint[]
+  teams                TrekkingTeam[]
+}
+
+model TrekkingRole {
+  id          String        @id @default(uuid())
+  trekking_id    String
+  trekking Trekking         @relation(fields: [trekking_id], references: [id])
+  name        String        
+  permissions BigInt        
+  members     TrekkingMember[]
+}
+
+model TrekkingMember {
+  user_id     String
+  trekking_id    String
+  role_id     String
+  role        TrekkingRole     @relation(fields: [role_id], references: [id])
+  trekking Trekking         @relation(fields: [trekking_id], references: [id])
+
+  @@id([user_id, trekking_id])
+}
+
+model Team {
+  id          String        @id @default(uuid())
+  name        String
+  created_at  DateTime      @default(now())
+  created_by  String?
+  events      TrekkingTeam[]
+  members     TeamMember[]
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  team_id   String
+  user_id   String
+  role      String   @default("MEMBER") // OWNER, ADMIN, MEMBER
+  joined_at DateTime @default(now())
+
+  team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([team_id, user_id])
+}
+
+model TrekkingTeam {
+  trekking_id    String
+  team_id     String
+  status      String        @default("REGISTERED") // REGISTERED, ACTIVE, COMPLETED, DISQUALIFIED
+  start_time  DateTime?     // Assiged staggered start time
+  
+  trekking Trekking         @relation(fields: [trekking_id], references: [id])
+  team        Team          @relation(fields: [team_id], references: [id])
+
+  @@id([trekking_id, team_id])
+}
+
+model Checkpoint {
+  id                String   @id @default(uuid())
+  trekking_id          String
+  trekking Trekking    @relation(fields: [trekking_id], references: [id])
+  order             Int
+  name              String
+  is_start_line     Boolean  @default(false)
+  is_finish_line    Boolean  @default(false)
+  ideal_time_offset Int      @default(0) // Seconds from the team's start time
+}
+
+model TrackingRecord {
+  id          String   @id @default(uuid())
+  trekking_id    String
+  team_id     String
+  qr_hash     String   // Sincronized QR code hash
+  read_at     DateTime // Recalculated true time (device time + offset)
+  device_time DateTime // Original device time
+  sync_time   DateTime @default(now())
+}
+
+model CertificateTemplate {
+  id            String   @id @default(uuid())
+  trekking_id   String?
+  event_id      String?
+  name          String
+  backgroundUrl String
+  config        String   // JSON payload with positions
+}
+
+model Certificate {
+  id            String   @id @default(uuid())
+  trekking_id   String?
+  event_id      String?
+  user_id       String
+  participant_name String?
+  hash          String   @unique
+  issued_at     DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
